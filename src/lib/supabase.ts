@@ -31,7 +31,7 @@ export async function getSignedUrls(
 
   const map: Record<string, string> = {}
   data.forEach(item => {
-    if (item.signedUrl) map[item.path] = item.signedUrl
+    if (item.signedUrl && item.path) map[item.path] = item.signedUrl
   })
   return map
 }
