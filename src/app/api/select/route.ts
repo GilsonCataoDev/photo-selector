@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { sendSelectionNotification } from '@/lib/email'
 
 // Rota pública — usada pelo cliente para finalizar seleção
 export async function POST(request: NextRequest) {
@@ -25,7 +26,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Esta seleção já foi finalizada' }, { status: 409 })
     }
 
-    // Validar quantidade mínima (deve selecionar pelo menos o limite do pacote)
+    // Validar quantidade mínima
     if (photo_ids.length < session.photo_limit) {
       return NextResponse.json(
         { error: `Selecione pelo menos ${session.photo_limit} fotos` },
@@ -74,6 +75,20 @@ export async function POST(request: NextRequest) {
       .from('sessions')
       .update({ status: 'completed' })
       .eq('id', session.id)
+
+    // Enviar notificação por e-mail (não bloqueia a resposta em caso de falha)
+    if (process.env.RESEND_API_KEY && process.env.NOTIFICATION_EMAIL) {
+      const extraCount = Math.max(0, photo_ids.length - session.photo_limit)
+      sendSelectionNotification({
+        clientName: session.client_name,
+        shootDate: session.shoot_date,
+        photoLimit: session.photo_limit,
+        totalSelected: photo_ids.length,
+        extraCount,
+        extraPrice: session.extra_photo_price,
+        sessionId: session.id,
+      }).catch(err => console.error('Erro ao enviar e-mail:', err))
+    }
 
     return NextResponse.json({ ok: true })
   } catch {
