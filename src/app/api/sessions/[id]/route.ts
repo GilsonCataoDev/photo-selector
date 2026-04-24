@@ -42,7 +42,8 @@ export async function GET(
     .eq('session_id', id)
 
   const selectedIds = new Set((selectionRows || []).map((s: { photo_id: string }) => s.photo_id))
-  const selectedPhotos = photosWithUrls.filter((p: { id: string }) => selectedIds.has(p.id))
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const selectedPhotos = photosWithUrls.filter((p: any) => selectedIds.has(p.id))
 
   return NextResponse.json({ session, photos: photosWithUrls, selectedPhotos })
 }
