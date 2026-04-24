@@ -6,6 +6,8 @@ export interface Session {
   status: 'pending' | 'completed'
   token: string
   extra_photo_price: number | null
+  message: string | null
+  expires_at: string | null
   created_at: string
   updated_at: string
   photos?: Photo[]
@@ -18,6 +20,7 @@ export interface Photo {
   url: string
   storage_path: string
   filename: string
+  sort_order: number
   created_at: string
 }
 
@@ -28,7 +31,9 @@ export interface Selection {
   created_at: string
 }
 
-export interface SessionWithCounts extends Session {
-  photos_count: number
-  selections_count: number
+export interface Stats {
+  total_sessions: number
+  completed_this_month: number
+  photos_delivered: number
+  extras_revenue: number
 }

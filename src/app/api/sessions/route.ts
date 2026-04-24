@@ -8,11 +8,7 @@ export async function GET() {
 
   const { data, error } = await supabaseAdmin
     .from('sessions')
-    .select(`
-      *,
-      photos(count),
-      selections(count)
-    `)
+    .select('*, photos(count), selections(count)')
     .order('created_at', { ascending: false })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -24,17 +20,15 @@ export async function POST(request: NextRequest) {
   if (!isAdmin) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
   try {
-    const { client_name, shoot_date, photo_limit, extra_photo_price } = await request.json()
+    const { client_name, shoot_date, photo_limit, extra_photo_price, message, expires_at } =
+      await request.json()
 
-    if (!client_name?.trim()) {
+    if (!client_name?.trim())
       return NextResponse.json({ error: 'Nome do cliente obrigatório' }, { status: 400 })
-    }
-    if (!shoot_date) {
+    if (!shoot_date)
       return NextResponse.json({ error: 'Data do ensaio obrigatória' }, { status: 400 })
-    }
-    if (!photo_limit || photo_limit < 1) {
+    if (!photo_limit || photo_limit < 1)
       return NextResponse.json({ error: 'Limite de fotos inválido' }, { status: 400 })
-    }
 
     const { data, error } = await supabaseAdmin
       .from('sessions')
@@ -43,6 +37,8 @@ export async function POST(request: NextRequest) {
         shoot_date,
         photo_limit,
         extra_photo_price: extra_photo_price ?? null,
+        message: message?.trim() || null,
+        expires_at: expires_at ?? null,
       })
       .select()
       .single()

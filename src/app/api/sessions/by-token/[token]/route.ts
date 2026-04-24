@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin, getSignedUrls } from '@/lib/supabase'
 
-// Rota pública — usada pela página do cliente
 export async function GET(
   _request: NextRequest,
   { params }: { params: { token: string } }
@@ -18,15 +17,18 @@ export async function GET(
     return NextResponse.json({ error: 'Sessão não encontrada' }, { status: 404 })
   }
 
+  // Verificar expiração
+  if (session.expires_at && new Date(session.expires_at) < new Date()) {
+    return NextResponse.json({ error: 'Este link expirou.' }, { status: 410 })
+  }
+
   const { data: photos } = await supabaseAdmin
     .from('photos')
     .select('*')
     .eq('session_id', session.id)
-    .order('created_at', { ascending: true })
+    .order('sort_order', { ascending: true })
 
   const photoList = photos || []
-
-  // Gerar URLs assinadas (expiram em 24h) — bucket privado
   const urlMap = await getSignedUrls(photoList, 60 * 60 * 24)
   const photosWithUrls = photoList.map((p: { storage_path: string; url: string }) => ({
     ...p,
@@ -42,9 +44,5 @@ export async function GET(
     selectedPhotoIds = (selections || []).map((s: { photo_id: string }) => s.photo_id)
   }
 
-  return NextResponse.json({
-    session,
-    photos: photosWithUrls,
-    selectedPhotoIds,
-  })
+  return NextResponse.json({ session, photos: photosWithUrls, selectedPhotoIds })
 }
